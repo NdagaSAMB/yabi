@@ -62,5 +62,11 @@
     <footer class="py-4 text-center bg-gray-100">
         <p>&copy; 2025 Ya&Bi - Tous droits réservés</p>
     </footer>
+
+    <head>
+    ...
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
 </body>
 </html>

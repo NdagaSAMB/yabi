@@ -12,10 +12,9 @@ class CartItem extends Model
     protected $fillable = [
         'product_id',
         'quantity',
-        'session_id', // pour identifier le panier de l'utilisateur
+        'session_id',
     ];
 
-    // 🔗 Relation : un élément de panier appartient à un produit
     public function product()
     {
         return $this->belongsTo(Product::class);
