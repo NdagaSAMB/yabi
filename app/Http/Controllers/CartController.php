@@ -8,73 +8,63 @@ use App\Models\Product;
 
 class CartController extends Controller
 {
-    // Affiche le contenu du panier
     public function index()
     {
         $sessionId = session()->getId();
-        $cartItems = CartItem::with('product')
-                             ->where('session_id', $sessionId)
-                             ->get();
+        $cartItems = CartItem::where('session_id', $sessionId)->with('product')->get();
 
-        $total = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
-
-        return view('cart.index', compact('cartItems', 'total'));
+        return view('cart.index', compact('cartItems'));
     }
 
-    // Ajoute un produit au panier
-    public function store($productId)
+    public function add(Request $request, $productId)
     {
-        $sessionId = session()->getId();
         $product = Product::findOrFail($productId);
+        $sessionId = session()->getId();
 
         $cartItem = CartItem::where('session_id', $sessionId)
-                            ->where('product_id', $productId)
+                            ->where('product_id', $product->id)
                             ->first();
 
         if ($cartItem) {
-            $cartItem->quantity++;
+            $cartItem->quantity += 1;
             $cartItem->save();
         } else {
             CartItem::create([
-                'product_id' => $productId,
-                'quantity' => 1,
+                'product_id' => $product->id,
+                'quantity'   => 1,
                 'session_id' => $sessionId,
             ]);
         }
 
         return redirect()->route('cart.index')->with('success', 'Produit ajouté au panier !');
+
     }
 
-    // Met à jour la quantité d’un produit
     public function update(Request $request, $id)
     {
-        $cartItem = CartItem::findOrFail($id);
+        $request->validate(['quantity' => 'required|integer|min:1']);
+        $sessionId = session()->getId();
 
-        if ($request->action === 'increase') {
-            $cartItem->quantity++;
-        } elseif ($request->action === 'decrease' && $cartItem->quantity > 1) {
-            $cartItem->quantity--;
-        }
-
+        $cartItem = CartItem::where('id', $id)->where('session_id', $sessionId)->firstOrFail();
+        $cartItem->quantity = (int) $request->quantity;
         $cartItem->save();
 
-        return redirect()->back()->with('success', 'Panier mis à jour !');
+        return redirect()->back()->with('success', 'Quantité mise à jour.');
     }
 
-    // Supprime un produit du panier
     public function remove($id)
     {
-        CartItem::findOrFail($id)->delete();
+        $sessionId = session()->getId();
+        CartItem::where('id', $id)->where('session_id', $sessionId)->delete();
 
-        return redirect()->back()->with('success', 'Produit retiré du panier !');
+        return redirect()->back()->with('success', 'Article supprimé.');
     }
 
-    // Vide tout le panier
     public function clear()
     {
         $sessionId = session()->getId();
         CartItem::where('session_id', $sessionId)->delete();
 
-        return redirect()->back()->with('success', 'Panier vidé !');
+        return redirect()->back()->with('success', 'Panier vidé.');
     }
 }

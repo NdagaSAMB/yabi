@@ -7,17 +7,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('order_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')
-                  ->constrained('orders') // référence à la table orders
-                  ->onDelete('cascade');
-            $table->string('product_name');
-            $table->integer('quantity');
-            $table->decimal('price', 10, 2);
-            $table->decimal('subtotal', 10, 2);
-            $table->timestamps();
-        });
+Schema::create('order_items', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('order_id')->constrained()->onDelete('cascade');
+    $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
+    $table->string('product_name');
+    $table->integer('quantity');
+    $table->decimal('price',10,2);
+    $table->decimal('subtotal',10,2);
+    $table->timestamps();
+});
+
+
     }
 
     public function down(): void

@@ -1,69 +1,72 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="px-6 py-12 mx-auto max-w-7xl">
-    <h2 class="mb-8 text-3xl font-bold text-center text-gray-800">Votre Panier</h2>
+<div class="container p-6 mx-auto">
+    @if(session('success'))
+        <div class="p-4 mb-4 text-green-800 bg-green-100 rounded">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="p-4 mb-4 text-red-800 bg-red-100 rounded">{{ session('error') }}</div>
+    @endif
 
-    @if($cartItems->isEmpty())
-        <p class="text-center text-gray-600">Votre panier est vide.</p>
-    @else
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b">
-                        <th class="px-4 py-2">Produit</th>
-                        <th class="px-4 py-2">Prix</th>
-                        <th class="px-4 py-2">Quantité</th>
-                        <th class="px-4 py-2">Total</th>
-                        <th class="px-4 py-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($cartItems as $item)
-                    <tr class="border-b">
-                        <td class="flex items-center gap-4 px-4 py-2">
-                            <img src="{{ asset('images/' . $item->product->image) }}" alt="{{ $item->product->name }}" class="object-cover w-16 h-16 rounded">
-                            <span>{{ $item->product->name }}</span>
-                        </td>
-                        <td class="px-4 py-2">{{ number_format($item->product->price, 0, ',', ' ') }} CFA</td>
-                        <td class="px-4 py-2">
-                            <form action="{{ route('cart.update', $item->id) }}" method="POST" class="flex items-center gap-2">
-                                @csrf
-                                @method('PUT')
-                                <button type="submit" name="action" value="decrease" class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">-</button>
-                                <span>{{ $item->quantity }}</span>
-                                <button type="submit" name="action" value="increase" class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">+</button>
-                            </form>
-                        </td>
-                        <td class="px-4 py-2 font-bold">{{ number_format($item->product->price * $item->quantity, 0, ',', ' ') }} CFA</td>
-                        <td class="px-4 py-2">
-                            <form action="{{ route('cart.remove', $item->id) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="px-3 py-1 text-white bg-red-600 rounded hover:bg-red-500">Supprimer</button>
-                            </form>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <div class="flex flex-col gap-6 lg:flex-row">
+        <div class="flex-1">
+            @forelse($cartItems as $item)
+                <div class="flex items-center p-4 mb-4 bg-white rounded shadow">
+                    <img src="{{ asset('storage/' . $item->product->image) }}" class="object-cover w-24 h-24 mr-4 rounded" alt="">
+                    <div class="flex-1">
+                        <h3 class="font-semibold">{{ $item->product->name }}</h3>
+                        <p class="text-sm text-gray-500">{{ $item->product->description }}</p>
+                        <p class="mt-2 font-bold">{{ number_format($item->product->price,0,',',' ') }} FCFA</p>
+
+                        <form action="{{ route('cart.update', $item->id) }}" method="POST" class="mt-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" class="inline-block w-20 p-2 border rounded">
+                            <button class="px-3 py-1 text-white bg-pink-600 rounded">Mettre à jour</button>
+                        </form>
+                    </div>
+
+                    <form action="{{ route('cart.remove', $item->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button class="px-3 py-1 text-white bg-red-500 rounded">Supprimer</button>
+                    </form>
+                </div>
+            @empty
+                <p>Votre panier est vide.</p>
+            @endforelse
         </div>
 
-        <div class="flex flex-col items-end mt-6 space-y-4">
-            <p class="text-lg font-semibold">Total : {{ number_format($total, 0, ',', ' ') }} CFA</p>
+        <div class="w-full p-6 bg-white rounded shadow lg:w-1/3">
+            <h3 class="mb-4 font-bold">Récapitulatif</h3>
+            <div class="flex justify-between mb-2">
+                <span>Sous-total</span>
+                <span>{{ $cartItems->sum(fn($i) => $i->product->price * $i->quantity) }} FCFA</span>
+            </div>
 
-            <form action="{{ route('cart.clear') }}" method="POST">
+            <form action="{{ route('checkout.store') }}" method="POST" class="mt-4 space-y-3">
                 @csrf
-                @method('DELETE')
-                <button type="submit" class="px-4 py-2 text-white bg-gray-600 rounded hover:bg-gray-500">
-                    Vider le panier
-                </button>
+                <input type="text" name="name" placeholder="Nom complet" required class="w-full p-2 border rounded">
+                <input type="text" name="address" placeholder="Adresse" required class="w-full p-2 border rounded">
+                <input type="text" name="phone" placeholder="Téléphone" required class="w-full p-2 border rounded">
+
+                <label class="block font-medium">Paiement à la livraison</label>
+                <select name="payment_method" required class="w-full p-2 border rounded">
+                    <option value="wave">Wave</option>
+                    <option value="orange_money">Orange Money</option>
+                    <option value="especes">Espèces</option>
+                </select>
+
+                <button type="submit" class="w-full px-4 py-2 text-white bg-pink-600 rounded">Valider la commande</button>
             </form>
 
-            <a href="{{ route('checkout.index') }}" class="px-6 py-2 text-white bg-pink-600 rounded hover:bg-pink-500">
-                Passer à la commande
-            </a>
+            <form action="{{ route('cart.clear') }}" method="POST" class="mt-3">
+                @csrf
+                @method('DELETE')
+                <button class="w-full px-4 py-2 text-white bg-gray-600 rounded">Vider le panier</button>
+            </form>
         </div>
-    @endif
+    </div>
 </div>
 @endsection
